@@ -1,3 +1,4 @@
+// ------- Channel List -------
 const channels = {
   pbb_ce_live_tfc_: {
     name: "PBB CE LIVE (TFC)",
@@ -600,7 +601,7 @@ const channels = {
 const select = document.getElementById('channelSelect');
 const video = document.getElementById('video');
 
-// Populate the channel dropdown
+// Populate the channel dropdown dynamically
 for (const key in channels) {
   const option = document.createElement('option');
   option.value = key;
@@ -608,13 +609,14 @@ for (const key in channels) {
   select.appendChild(option);
 }
 
+// Set GMA PINOY TV as default selected
+select.value = "gma_pinoy_tv";
+
 let player = null;
 
-select.addEventListener('change', async () => {
-  const selected = select.value;
-  if (!selected) return;
-
-  const channel = channels[selected];
+// Function to load a channel
+async function loadChannel(channelKey) {
+  const channel = channels[channelKey];
   if (!channel) return;
 
   if (player) {
@@ -629,33 +631,38 @@ select.addEventListener('change', async () => {
   });
 
   const drmConfig = {};
-
   if (channel.keys) {
     drmConfig.clearKeys = channel.keys;
   }
-
   if (channel.license && channel.license.type && channel.license.url) {
     drmConfig.servers = {
       [channel.license.type]: channel.license.url
     };
   }
-
   player.configure({ drm: drmConfig });
 
   try {
     await player.load(channel.url);
     console.log("Loaded channel:", channel.name);
     video.play();
-
     // Scroll to the video container
     document.querySelector('.player-wrapper').scrollIntoView({
       behavior: 'smooth',
       block: 'center'
     });
-
   } catch (error) {
     console.error("Failed to load channel:", error);
   }
+}
+
+// Load default channel on page load
+window.addEventListener('DOMContentLoaded', () => {
+  loadChannel(select.value);
 });
 
-
+// Change channel on select
+select.addEventListener('change', async () => {
+  const selected = select.value;
+  if (!selected) return;
+  await loadChannel(selected);
+});
